@@ -15,7 +15,7 @@ public class CPUProducer extends Producer {
     @Override
     public void run() {
         try {
-            queue.offer(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()), 10, TimeUnit.SECONDS);
+            this.isProducing = queue.offer(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()), 10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
