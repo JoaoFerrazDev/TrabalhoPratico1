@@ -5,16 +5,17 @@ import ResourceManager.ProducerValue;
 import ResourceManager.ResourceMonitorUtils;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class CPUProducer extends Producer {
+
     public CPUProducer(BlockingQueue<ProducerValue> queue) {
         super(queue);
     }
     @Override
     public void run() {
         try {
-            queue.put(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()));
-            System.out.println(queue.take().producer instanceof CPUProducer);
+            queue.offer(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()), 10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

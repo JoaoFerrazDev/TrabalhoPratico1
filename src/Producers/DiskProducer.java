@@ -14,8 +14,6 @@ public class DiskProducer extends Producer {
     public void run() {
         try {
             queue.put(new ProducerValue(this, ResourceMonitorUtils.getFreeDiskSpace()));
-            System.out.println(queue.take().producer instanceof DiskProducer);
-
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

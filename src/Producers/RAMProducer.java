@@ -14,7 +14,6 @@ public class RAMProducer extends Producer {
     public void run() {
         try {
             queue.put(new ProducerValue(this, ResourceMonitorUtils.getFreeRAM()));
-            System.out.println(queue.take().producer instanceof RAMProducer);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

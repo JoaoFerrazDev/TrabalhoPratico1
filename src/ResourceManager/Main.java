@@ -9,14 +9,15 @@ import java.util.concurrent.*;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        BlockingQueue<ProducerValue> queue = new LinkedBlockingQueue<>();
+        BlockingQueue<ProducerValue> queue = new ArrayBlockingQueue<>(100);
+        ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance();
 
         RAMProducer ramProducer = new RAMProducer(queue);
         CPUProducer cpuProducer = new CPUProducer(queue);
         DiskProducer diskProducer = new DiskProducer(queue);
-        Consumer consumer1 = new Consumer(queue);
-        Consumer consumer2 = new Consumer(queue);
-        Consumer consumer3 = new Consumer(queue);
+        Consumer consumer1 = new Consumer(queue, monitorGUI);
+        Consumer consumer2 = new Consumer(queue, monitorGUI);
+        Consumer consumer3 = new Consumer(queue, monitorGUI);
 
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -25,10 +26,14 @@ public class Main {
         executorService.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS);
         executorService.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS);
         executorService.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(consumer1, 2000, 300, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(consumer2, 2000, 300, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(consumer3, 2000, 300, TimeUnit.MILLISECONDS);
+
 
         // Run the scheduled task for a certain duration (e.g., 5000 milliseconds)
         try {
-            Thread.sleep(5000);
+            Thread.sleep(Integer.MAX_VALUE);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
