@@ -18,24 +18,25 @@ public class Consumer extends Thread{
     }
     @Override
     public void run() {
-        while(true) {
+        //while(true) {
             try {
-                System.out.println(queue.size());
                 ProducerValue producerValue = queue.poll(30, TimeUnit.SECONDS);
                 this.isConsuming = producerValue != null;
                 if(producerValue != null) {
+                    //System.out.println("Producer : " + producerValue.producer.getClass() + ", Producer value : " + producerValue.producerValue);
+                    System.out.println(queue.size());
                     if(producerValue.producer instanceof RAMProducer) {
-                        if(producerValue.producerValue * 100 < 10) {
+                        if(producerValue.producerValue < 10) {
                             monitorGUI.addAlert("RAM USAGE WARNING : USAGE -> " + String.format("%,.2f", producerValue.producerValue * 100) + "%");
                             System.out.println();
                         }
                     } else if (producerValue.producer instanceof CPUProducer) {
-                        if(producerValue.producerValue * 100 > 80) {
+                        if(producerValue.producerValue > 80) {
                             monitorGUI.addAlert("CPU USAGE WARNING : USAGE -> " + String.format("%,.2f", producerValue.producerValue * 100) + "%");
                         }
                     }
                     else if (producerValue.producer instanceof DiskProducer) {
-                        if(producerValue.producerValue * 100 < 20) {
+                        if(producerValue.producerValue < 20) {
                             monitorGUI.addAlert("DISK USAGE WARNING : USAGE -> " + String.format("%,.2f", producerValue.producerValue * 100) + "%");
                         }
                     }
@@ -47,7 +48,7 @@ public class Consumer extends Thread{
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }
+        //}
 
     }
 }

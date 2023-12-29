@@ -6,12 +6,12 @@ import java.util.Random;
 
 import com.sun.management.OperatingSystemMXBean;
 
-/*
+
 public class ResourceMonitorUtils {
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
     public static double getCpuLoad() {
         // This method returns the real CPU load.
-        double cpuLoad = operatingSystemMXBean.getCpuLoad();
+        double cpuLoad = operatingSystemMXBean.getCpuLoad() * 100;
 
         // If the CPU load is invalid, an exception is thrown.
         if (cpuLoad < 0.0)
@@ -21,7 +21,7 @@ public class ResourceMonitorUtils {
 
     public static double getFreeRAM() {
 
-        double freeRAMLoad = operatingSystemMXBean.getFreeMemorySize();
+        double freeRAMLoad = ((double) operatingSystemMXBean.getFreeMemorySize() / operatingSystemMXBean.getTotalMemorySize()) * 100;
         // This method simulates the free RAM percentage.
         if (freeRAMLoad < 0.0)
             throw new RuntimeException("Invalid CPU load.");
@@ -38,7 +38,8 @@ public class ResourceMonitorUtils {
         return freeDiskSpace;
     }
 
-}*/
+}
+/*
 
 public class ResourceMonitorUtils
 {
@@ -77,4 +78,4 @@ public class ResourceMonitorUtils
         return simulatePercentage("Invalid free disk space percentage.");
     }
 
-}
+}*/

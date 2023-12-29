@@ -6,12 +6,14 @@ import Producers.RAMProducer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         BlockingQueue<ProducerValue> queue = new ArrayBlockingQueue<>(100);
         ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance();
+        Scanner in = new Scanner(System.in);
         int numberOfConsumers = 1;
         ArrayList<Consumer> consumers = new ArrayList<>();
         consumers.add(new Consumer(queue, monitorGUI));
@@ -32,7 +34,8 @@ public class Main {
                 executorServiceForProducers,
                 executorServiceForConsumers,
                 queue,
-                monitorGUI);
+                monitorGUI,
+                false);
 
         daemonThread.setDaemon(true);
         daemonThread.start();
@@ -42,9 +45,13 @@ public class Main {
         executorServiceForProducers.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
 
         for (Consumer consumer: consumers) {
-            executorServiceForConsumers.schedule(consumer, 2, TimeUnit.SECONDS);
+            executorServiceForConsumers.scheduleAtFixedRate(consumer, 2, 20,TimeUnit.SECONDS);
         }
 
+        String s = in.nextLine();
+        if (!s.isEmpty()) {
+            daemonThread.forceShutdown = true;
+        }
         try {
             Thread.sleep(Integer.MAX_VALUE);
 

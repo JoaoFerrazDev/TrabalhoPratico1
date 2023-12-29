@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DaemonThread extends Thread{
 
+    protected boolean forceShutdown;
     protected CPUProducer cpuProducer;
     protected RAMProducer ramProducer;
     protected DiskProducer diskProducer;
@@ -26,7 +27,8 @@ public class DaemonThread extends Thread{
                         ScheduledExecutorService executorServiceForProducers,
                         ScheduledExecutorService executorServiceForConsumers,
                         BlockingQueue<ProducerValue> queue,
-                        ResourceMonitorGUI monitorGUI) {
+                        ResourceMonitorGUI monitorGUI,
+                        boolean forceShutdown) {
 
         this.cpuProducer = cpuProducer;
         this.ramProducer = ramProducer;
@@ -36,11 +38,12 @@ public class DaemonThread extends Thread{
         this.executorServiceForConsumers = executorServiceForConsumers;
         this.queue = queue;
         this.monitorGUI = monitorGUI;
+        this.forceShutdown = forceShutdown;
     }
     @Override
     public void run() {
 
-        while (true) {
+        while (!forceShutdown) {
 
             CreateProducerIfNotProducing(cpuProducer);
             CreateProducerIfNotProducing(ramProducer);
@@ -55,10 +58,18 @@ public class DaemonThread extends Thread{
                 throw new RuntimeException(e);
             }
         }
+
+        cpuProducer.interrupt();
+        ramProducer.interrupt();
+        diskProducer.interrupt();
+        for(Consumer consumer : consumers) {
+            consumer.interrupt();
+        }
     }
 
     public void CreateProducerIfNotProducing(Producer producer) {
         if(!producer.isProducing) {
+            producer.interrupt();
             System.out.println("Not Producing");
             switch (producer) {
                 case CPUProducer cpuProducer1 ->
@@ -75,8 +86,9 @@ public class DaemonThread extends Thread{
 
     public void CreateConsumerIfNotConsuming(Consumer consumer) {
         if(!consumer.isConsuming) {
+            consumer.interrupt();
             System.out.println("Not Consuming");
-            this.executorServiceForConsumers.schedule(new Consumer(queue, monitorGUI), 2, TimeUnit.SECONDS);
+            this.executorServiceForConsumers.scheduleAtFixedRate(new Consumer(queue, monitorGUI), 2, 20, TimeUnit.SECONDS);
         }
     }
 
