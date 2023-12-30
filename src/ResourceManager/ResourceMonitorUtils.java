@@ -7,7 +7,7 @@ import java.util.Random;
 import com.sun.management.OperatingSystemMXBean;
 
 
-public class ResourceMonitorUtils {
+/*public class ResourceMonitorUtils {
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
     public static double getCpuLoad() {
         // This method returns the real CPU load.
@@ -38,8 +38,8 @@ public class ResourceMonitorUtils {
         return freeDiskSpace;
     }
 
-}
-/*
+}*/
+
 
 public class ResourceMonitorUtils
 {
@@ -78,4 +78,4 @@ public class ResourceMonitorUtils
         return simulatePercentage("Invalid free disk space percentage.");
     }
 
-}*/
+}

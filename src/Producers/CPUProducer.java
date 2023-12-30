@@ -4,6 +4,7 @@ import ResourceManager.Producer;
 import ResourceManager.ProducerValue;
 import ResourceManager.ResourceMonitorUtils;
 
+import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +16,8 @@ public class CPUProducer extends Producer {
     @Override
     public void run() {
         try {
-            this.isProducing = queue.offer(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()), 10, TimeUnit.SECONDS);
+            queue.put(new ProducerValue(this, ResourceMonitorUtils.getCpuLoad()));
+            this.lastTimeProduced = Instant.now();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

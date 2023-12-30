@@ -4,20 +4,25 @@ import Producers.CPUProducer;
 import Producers.DiskProducer;
 import Producers.RAMProducer;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DaemonThread extends Thread{
 
-    protected boolean forceShutdown;
+    protected AtomicBoolean isRunning;
     protected CPUProducer cpuProducer;
     protected RAMProducer ramProducer;
     protected DiskProducer diskProducer;
     protected ArrayList<Consumer> consumers;
     protected ScheduledExecutorService executorServiceForProducers;
-    protected ScheduledExecutorService executorServiceForConsumers;
+    protected ExecutorService executorServiceForConsumers;
     protected BlockingQueue<ProducerValue> queue;
     protected ResourceMonitorGUI monitorGUI;
     public DaemonThread(CPUProducer cpuProducer,
@@ -25,10 +30,10 @@ public class DaemonThread extends Thread{
                         DiskProducer diskProducer,
                         ArrayList<Consumer> consumers,
                         ScheduledExecutorService executorServiceForProducers,
-                        ScheduledExecutorService executorServiceForConsumers,
+                        ExecutorService executorServiceForConsumers,
                         BlockingQueue<ProducerValue> queue,
                         ResourceMonitorGUI monitorGUI,
-                        boolean forceShutdown) {
+                        AtomicBoolean isRunning) {
 
         this.cpuProducer = cpuProducer;
         this.ramProducer = ramProducer;
@@ -38,58 +43,67 @@ public class DaemonThread extends Thread{
         this.executorServiceForConsumers = executorServiceForConsumers;
         this.queue = queue;
         this.monitorGUI = monitorGUI;
-        this.forceShutdown = forceShutdown;
+        this.isRunning = isRunning;
     }
     @Override
     public void run() {
 
-        while (!forceShutdown) {
-
-            CreateProducerIfNotProducing(cpuProducer);
-            CreateProducerIfNotProducing(ramProducer);
-            CreateProducerIfNotProducing(diskProducer);
-            for(Consumer consumer : consumers) {
-                CreateConsumerIfNotConsuming(consumer);
-            }
+        while (true) {
             try {
-                sleep(1000);
+                if(isRunning.get()) {
+                    Thread.sleep(1000);
+                    CreateProducerIfNotProducing(cpuProducer);
+                    CreateProducerIfNotProducing(ramProducer);
+                    CreateProducerIfNotProducing(diskProducer);
+                    System.out.println("Here false");
+                    for(Consumer consumer : consumers) {
+                        CreateConsumerIfNotConsuming(consumer);
+                    }
+                }
+                else {
+                    System.out.println(Thread.activeCount());
+                    executorServiceForProducers.close();
+                    executorServiceForConsumers.close();
+                }
+
             }
             catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Daemon Parou!");
             }
+
         }
 
-        cpuProducer.interrupt();
-        ramProducer.interrupt();
-        diskProducer.interrupt();
-        for(Consumer consumer : consumers) {
-            consumer.interrupt();
-        }
     }
 
     public void CreateProducerIfNotProducing(Producer producer) {
-        if(!producer.isProducing) {
-            producer.interrupt();
-            System.out.println("Not Producing");
-            switch (producer) {
-                case CPUProducer cpuProducer1 ->
-                        this.executorServiceForProducers.scheduleAtFixedRate(new CPUProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                case RAMProducer ramProducer1 ->
-                        this.executorServiceForProducers.scheduleAtFixedRate(new RAMProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                case DiskProducer diskProducer1 ->
-                        this.executorServiceForProducers.scheduleAtFixedRate(new DiskProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                default -> {
+        if(producer.lastTimeProduced != null) {
+            if(Duration.between(producer.lastTimeProduced, Instant.now()).toMillis() >= 10000) {
+                System.out.println("Not Producing");
+                switch (producer) {
+                    case CPUProducer cpuProducer1 ->
+                            this.executorServiceForProducers.scheduleAtFixedRate(new CPUProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                    case RAMProducer ramProducer1 ->
+                            this.executorServiceForProducers.scheduleAtFixedRate(new RAMProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                    case DiskProducer diskProducer1 ->
+                            this.executorServiceForProducers.scheduleAtFixedRate(new DiskProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                    default -> {
+                    }
                 }
             }
         }
+
     }
 
     public void CreateConsumerIfNotConsuming(Consumer consumer) {
-        if(!consumer.isConsuming) {
-            consumer.interrupt();
-            System.out.println("Not Consuming");
-            this.executorServiceForConsumers.scheduleAtFixedRate(new Consumer(queue, monitorGUI), 2, 20, TimeUnit.SECONDS);
+        if(consumer.lastTimeConsumed != null) {
+            if(Duration.between(consumer.lastTimeConsumed, Instant.now()).toMillis() >= 30000) {
+                System.out.println("Not Consuming");
+                Consumer newConsumer = new Consumer(queue, monitorGUI);
+                consumers.add(newConsumer);
+                executorServiceForConsumers.execute(consumer);
+            }
         }
+
     }
 
 

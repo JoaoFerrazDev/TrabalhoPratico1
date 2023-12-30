@@ -8,19 +8,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
+        AtomicBoolean isRunning = new AtomicBoolean(true);
         BlockingQueue<ProducerValue> queue = new ArrayBlockingQueue<>(100);
-        ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance();
+        ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance(isRunning);
         Scanner in = new Scanner(System.in);
         int numberOfConsumers = 1;
         ArrayList<Consumer> consumers = new ArrayList<>();
-        consumers.add(new Consumer(queue, monitorGUI));
-        consumers.add(new Consumer(queue, monitorGUI));
-        consumers.add(new Consumer(queue, monitorGUI));
+        for (int i = 0; i < numberOfConsumers; i++) {
+            consumers.add(new Consumer(queue, monitorGUI));
+        }
 
-        ScheduledExecutorService executorServiceForConsumers = Executors.newScheduledThreadPool(numberOfConsumers);
+        ExecutorService executorServiceForConsumers = Executors.newCachedThreadPool();
         ScheduledExecutorService executorServiceForProducers = Executors.newScheduledThreadPool(3);
 
         RAMProducer ramProducer = new RAMProducer(queue);
@@ -35,29 +37,19 @@ public class Main {
                 executorServiceForConsumers,
                 queue,
                 monitorGUI,
-                false);
+                isRunning);
 
         daemonThread.setDaemon(true);
-        daemonThread.start();
 
         executorServiceForProducers.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS);
         executorServiceForProducers.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS);
         executorServiceForProducers.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
 
         for (Consumer consumer: consumers) {
-            executorServiceForConsumers.scheduleAtFixedRate(consumer, 2, 20,TimeUnit.SECONDS);
+            executorServiceForConsumers.execute(consumer);
         }
 
-        String s = in.nextLine();
-        if (!s.isEmpty()) {
-            daemonThread.forceShutdown = true;
-        }
-        try {
-            Thread.sleep(Integer.MAX_VALUE);
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        daemonThread.start();
 
     }
 }
