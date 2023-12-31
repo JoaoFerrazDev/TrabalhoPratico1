@@ -21,16 +21,14 @@ public class DaemonThread extends Thread{
     protected RAMProducer ramProducer;
     protected DiskProducer diskProducer;
     protected ArrayList<Consumer> consumers;
-    protected ScheduledExecutorService executorServiceForProducers;
-    protected ExecutorService executorServiceForConsumers;
+    protected ScheduledExecutorService executorService;
     protected BlockingQueue<ProducerValue> queue;
     protected ResourceMonitorGUI monitorGUI;
     public DaemonThread(CPUProducer cpuProducer,
                         RAMProducer ramProducer,
                         DiskProducer diskProducer,
                         ArrayList<Consumer> consumers,
-                        ScheduledExecutorService executorServiceForProducers,
-                        ExecutorService executorServiceForConsumers,
+                        ScheduledExecutorService executorService,
                         BlockingQueue<ProducerValue> queue,
                         ResourceMonitorGUI monitorGUI,
                         AtomicBoolean isRunning) {
@@ -39,8 +37,7 @@ public class DaemonThread extends Thread{
         this.ramProducer = ramProducer;
         this.diskProducer = diskProducer;
         this.consumers = consumers;
-        this.executorServiceForProducers = executorServiceForProducers;
-        this.executorServiceForConsumers = executorServiceForConsumers;
+        this.executorService = executorService;
         this.queue = queue;
         this.monitorGUI = monitorGUI;
         this.isRunning = isRunning;
@@ -55,15 +52,14 @@ public class DaemonThread extends Thread{
                     CreateProducerIfNotProducing(cpuProducer);
                     CreateProducerIfNotProducing(ramProducer);
                     CreateProducerIfNotProducing(diskProducer);
-                    System.out.println("Here false");
                     for(Consumer consumer : consumers) {
                         CreateConsumerIfNotConsuming(consumer);
                     }
                 }
                 else {
-                    System.out.println(Thread.activeCount());
-                    executorServiceForProducers.close();
-                    executorServiceForConsumers.close();
+                    executorService.shutdown();
+                    executorService.awaitTermination(10, TimeUnit.SECONDS);
+                    break;
                 }
 
             }
@@ -81,11 +77,11 @@ public class DaemonThread extends Thread{
                 System.out.println("Not Producing");
                 switch (producer) {
                     case CPUProducer cpuProducer1 ->
-                            this.executorServiceForProducers.scheduleAtFixedRate(new CPUProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                            this.executorService.scheduleAtFixedRate(new CPUProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
                     case RAMProducer ramProducer1 ->
-                            this.executorServiceForProducers.scheduleAtFixedRate(new RAMProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                            this.executorService.scheduleAtFixedRate(new RAMProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
                     case DiskProducer diskProducer1 ->
-                            this.executorServiceForProducers.scheduleAtFixedRate(new DiskProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
+                            this.executorService.scheduleAtFixedRate(new DiskProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
                     default -> {
                     }
                 }
@@ -100,7 +96,7 @@ public class DaemonThread extends Thread{
                 System.out.println("Not Consuming");
                 Consumer newConsumer = new Consumer(queue, monitorGUI);
                 consumers.add(newConsumer);
-                executorServiceForConsumers.execute(consumer);
+                executorService.execute(consumer);
             }
         }
 

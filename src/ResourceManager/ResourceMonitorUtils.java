@@ -52,16 +52,20 @@ public class ResourceMonitorUtils
         double cpuLoad = operatingSystemMXBean.getCpuLoad();
 
         // If the CPU load is invalid, an exception is thrown.
-        if (cpuLoad < 0.0)
+        if (cpuLoad < 0.0) {
+            System.out.println("CPU HERE");
             throw new RuntimeException("Invalid CPU load.");
+        }
         return cpuLoad;
     }
 
     private static double simulatePercentage(String errorMessage)
     {
         // There is a 5% probability that an exception may occur.
-        if (randomGenerator.nextDouble() < 0.05)
+        if (randomGenerator.nextDouble() < 0.05) {
+            System.out.println("PARTI");
             throw new RuntimeException(errorMessage);
+        }
 
         return randomGenerator.nextDouble();
     }

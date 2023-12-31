@@ -6,15 +6,17 @@ import ResourceManager.ResourceMonitorUtils;
 
 import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
-public class RAMProducer extends Producer {
+public class RAMProducer extends Producer implements Runnable {
     public RAMProducer(BlockingQueue<ProducerValue> queue){
         super(queue);
     }
     @Override
     public void run() {
         try {
-            queue.put(new ProducerValue(this, ResourceMonitorUtils.getFreeRAM()));
+            boolean isOffer = queue.offer(new ProducerValue(this, ResourceMonitorUtils.getFreeRAM()), 10, TimeUnit.SECONDS);
+            if(!isOffer) Thread.currentThread().interrupt();
             this.lastTimeProduced = Instant.now();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

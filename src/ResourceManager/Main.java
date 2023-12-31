@@ -15,15 +15,13 @@ public class Main {
         AtomicBoolean isRunning = new AtomicBoolean(true);
         BlockingQueue<ProducerValue> queue = new ArrayBlockingQueue<>(100);
         ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance(isRunning);
-        Scanner in = new Scanner(System.in);
-        int numberOfConsumers = 1;
+        int numberOfConsumers = 3;
         ArrayList<Consumer> consumers = new ArrayList<>();
         for (int i = 0; i < numberOfConsumers; i++) {
             consumers.add(new Consumer(queue, monitorGUI));
         }
 
-        ExecutorService executorServiceForConsumers = Executors.newCachedThreadPool();
-        ScheduledExecutorService executorServiceForProducers = Executors.newScheduledThreadPool(3);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(3 + numberOfConsumers);
 
         RAMProducer ramProducer = new RAMProducer(queue);
         CPUProducer cpuProducer = new CPUProducer(queue);
@@ -33,23 +31,21 @@ public class Main {
                 ramProducer,
                 diskProducer,
                 consumers,
-                executorServiceForProducers,
-                executorServiceForConsumers,
+                executorService,
                 queue,
                 monitorGUI,
                 isRunning);
 
         daemonThread.setDaemon(true);
 
-        executorServiceForProducers.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS);
-        executorServiceForProducers.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS);
-        executorServiceForProducers.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
 
         for (Consumer consumer: consumers) {
-            executorServiceForConsumers.execute(consumer);
+            executorService.execute(consumer);
         }
 
         daemonThread.start();
-
     }
 }
