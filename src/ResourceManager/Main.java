@@ -4,9 +4,7 @@ import Producers.CPUProducer;
 import Producers.DiskProducer;
 import Producers.RAMProducer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 

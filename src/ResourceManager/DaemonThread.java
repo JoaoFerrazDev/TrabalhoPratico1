@@ -58,7 +58,7 @@ public class DaemonThread extends Thread{
                 }
                 else {
                     executorService.shutdown();
-                    executorService.awaitTermination(10, TimeUnit.SECONDS);
+                    System.out.println(executorService.isTerminated());
                     break;
                 }
 
