@@ -9,9 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ResourceMonitorGUI {
     private JFrame windowFrame;
     private JTextArea alertsArea;
-    private AtomicBoolean isRunning;
 
-    public ResourceMonitorGUI(AtomicBoolean isRunning) {
+    public ResourceMonitorGUI() {
         windowFrame = new JFrame("Resource Monitor GUI");
         windowFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         windowFrame.setResizable(false);
@@ -27,11 +26,11 @@ public class ResourceMonitorGUI {
         windowFrame.setBackground(Color.WHITE);
         windowFrame.setVisible(true);
         JButton stopButton = new JButton("Stop");
-        this.isRunning = isRunning;
         stopButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                isRunning.set(false);
+                Main.isRunning.set(false);
+                windowFrame.dispose();
             }
         });
         JPanel buttonPanel = new JPanel();
@@ -47,6 +46,6 @@ public class ResourceMonitorGUI {
     }
 
     public static ResourceMonitorGUI newInstance(AtomicBoolean isRunning) {
-        return new ResourceMonitorGUI(isRunning);
+        return new ResourceMonitorGUI();
     }
 }

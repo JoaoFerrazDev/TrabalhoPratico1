@@ -9,8 +9,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
+    static AtomicBoolean isRunning = new AtomicBoolean(true);
+
     public static void main(String[] args) throws InterruptedException {
-        AtomicBoolean isRunning = new AtomicBoolean(true);
         BlockingQueue<ProducerValue> queue = new ArrayBlockingQueue<>(100);
         ResourceMonitorGUI monitorGUI = ResourceMonitorGUI.newInstance(isRunning);
         int numberOfConsumers = 3;
@@ -31,15 +32,13 @@ public class Main {
                 consumers,
                 executorService,
                 queue,
-                monitorGUI,
-                isRunning);
+                monitorGUI);
 
         daemonThread.setDaemon(true);
 
-        executorService.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS);
-        executorService.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS);
-        executorService.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS);
-
+        executorService.scheduleAtFixedRate(diskProducer, 0, 100, TimeUnit.MILLISECONDS).isDone();
+        executorService.scheduleAtFixedRate(cpuProducer, 0, 100, TimeUnit.MILLISECONDS).isDone();
+        executorService.scheduleAtFixedRate(ramProducer, 0, 100, TimeUnit.MILLISECONDS).isDone();
         for (Consumer consumer: consumers) {
             executorService.execute(consumer);
         }

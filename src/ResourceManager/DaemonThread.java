@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DaemonThread extends Thread{
 
-    protected AtomicBoolean isRunning;
     protected CPUProducer cpuProducer;
     protected RAMProducer ramProducer;
     protected DiskProducer diskProducer;
@@ -30,8 +29,7 @@ public class DaemonThread extends Thread{
                         ArrayList<Consumer> consumers,
                         ScheduledExecutorService executorService,
                         BlockingQueue<ProducerValue> queue,
-                        ResourceMonitorGUI monitorGUI,
-                        AtomicBoolean isRunning) {
+                        ResourceMonitorGUI monitorGUI) {
 
         this.cpuProducer = cpuProducer;
         this.ramProducer = ramProducer;
@@ -40,14 +38,13 @@ public class DaemonThread extends Thread{
         this.executorService = executorService;
         this.queue = queue;
         this.monitorGUI = monitorGUI;
-        this.isRunning = isRunning;
     }
     @Override
     public void run() {
 
         while (true) {
             try {
-                if(isRunning.get()) {
+                if(Main.isRunning.get()) {
                     Thread.sleep(1000);
                     CreateProducerIfNotProducing(cpuProducer);
                     CreateProducerIfNotProducing(ramProducer);
@@ -58,7 +55,6 @@ public class DaemonThread extends Thread{
                 }
                 else {
                     executorService.shutdown();
-                    System.out.println(executorService.isTerminated());
                     break;
                 }
 
@@ -74,16 +70,23 @@ public class DaemonThread extends Thread{
     public void CreateProducerIfNotProducing(Producer producer) {
         if(producer.lastTimeProduced != null) {
             if(Duration.between(producer.lastTimeProduced, Instant.now()).toMillis() >= 10000) {
-                System.out.println("Not Producing");
-                switch (producer) {
-                    case CPUProducer cpuProducer1 ->
-                            this.executorService.scheduleAtFixedRate(new CPUProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                    case RAMProducer ramProducer1 ->
-                            this.executorService.scheduleAtFixedRate(new RAMProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                    case DiskProducer diskProducer1 ->
-                            this.executorService.scheduleAtFixedRate(new DiskProducer(this.queue), 0, 100, TimeUnit.MILLISECONDS);
-                    default -> {
-                    }
+                System.out.println("Not Producing : " + producer.getClass());
+                if(producer instanceof CPUProducer) {
+                    CPUProducer newCpuProducer = new CPUProducer(this.queue);
+                    this.cpuProducer = newCpuProducer;
+                    this.executorService.scheduleAtFixedRate(newCpuProducer, 0, 100, TimeUnit.MILLISECONDS);
+                }
+
+                if(producer instanceof RAMProducer) {
+                    RAMProducer newRamProducer = new RAMProducer(this.queue);
+                    this.ramProducer = newRamProducer;
+                    this.executorService.scheduleAtFixedRate(newRamProducer, 0, 100, TimeUnit.MILLISECONDS);
+                }
+
+                if(producer instanceof DiskProducer) {
+                    DiskProducer newDiskProducer = new DiskProducer(this.queue);
+                    this.diskProducer = newDiskProducer;
+                    this.executorService.scheduleAtFixedRate(newDiskProducer, 0, 100, TimeUnit.MILLISECONDS);
                 }
             }
         }
